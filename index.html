@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Management Dashboard</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 40px auto; padding: 20px; background: #f4f4f9; color: #333; }
+        h1 { color: #2c3e50; }
+        .card { background: white; padding: 20px; margin-bottom: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        input, button { padding: 10px; margin: 5px 0; font-size: 14px; }
+        button { background: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background: #2980b9; }
+        .delete-btn { background: #e74c3c; }
+        .delete-btn:hover { background: #c0392b; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
+        th { background: #2c3e50; color: white; }
+    </style>
+</head>
+<body>
+
+    <h1>🎓 Student Management Dashboard</h1>
+
+    <!-- Add Student Form -->
+    <div class="card">
+        <h3>Add New Student</h3>
+        <input type="number" id="id" placeholder="ID (e.g. 1)"><br>
+        <input type="text" id="name" placeholder="Full Name"><br>
+        <input type="number" id="age" placeholder="Age"><br>
+        <input type="text" id="course" placeholder="Course"><br>
+        <input type="number" step="0.1" id="marks" placeholder="Marks"><br>
+        <button onclick="addStudent()">Add Student</button>
+    </div>
+
+    <!-- Student List Table -->
+    <div class="card">
+        <h3>Students List <button onclick="fetchStudents()" style="float: right; padding: 5px 10px; font-size: 12px;">Refresh</button></h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Age</th>
+                    <th>Course</th>
+                    <th>Marks</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody id="student-table-body">
+                <!-- Dynamic rows will load here -->
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        const API_URL = "http://127.0.0.1:8000/students/";
+
+        // Fetch and display all students
+        async function fetchStudents() {
+            try {
+                const response = await fetch(API_URL);
+                const students = await response.json();
+                const tbody = document.getElementById("student-table-body");
+                tbody.innerHTML = "";
+
+                if (students.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;">No students found. Add one or test via Postman!</td></tr>`;
+                    return;
+                }
+
+                students.forEach(s => {
+                    tbody.innerHTML += `
+                        <tr>
+                            <td>${s.id}</td>
+                            <td>${s.name}</td>
+                            <td>${s.age}</td>
+                            <td>${s.course}</td>
+                            <td>${s.marks}</td>
+                            <td><button class="delete-btn" onclick="deleteStudent(${s.id})">Delete</button></td>
+                        </tr>
+                    `;
+                });
+            } catch (error) {
+                console.error("Error fetching students:", error);
+            }
+        }
+
+        // Add a new student from the website form
+        async function addStudent() {
+            const studentData = {
+                id: parseInt(document.getElementById("id").value),
+                name: document.getElementById("name").value,
+                age: parseInt(document.getElementById("age").value),
+                course: document.getElementById("course").value,
+                marks: parseFloat(document.getElementById("marks").value)
+            };
+
+            const response = await fetch(API_URL, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(studentData)
+            });
+
+            if (response.ok) {
+                alert("Student added successfully!");
+                fetchStudents(); // Refresh table
+            } else {
+                alert("Failed to add student. Check ID or inputs.");
+            }
+        }
+
+        // Delete a student
+        async function deleteStudent(id) {
+            const response = await fetch(`${API_URL}${id}`, { method: "DELETE" });
+            if (response.ok) {
+                fetchStudents(); // Refresh table
+            } else {
+                alert("Failed to delete student.");
+            }
+        }
+
+        // Load students when page opens
+        fetchStudents();
+    </script>
+</body>
+</html>
